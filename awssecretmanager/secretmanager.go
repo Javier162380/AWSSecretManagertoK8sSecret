@@ -1,6 +1,9 @@
 package secretmanager
 
 import (
+	"encoding/json"
+	"fmt"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/secretsmanager"
@@ -20,8 +23,8 @@ func createsession(region string, profile string) *secretsmanager.SecretsManager
 
 }
 
-// SecretParser a secret file from AWSSSM repository
-func SecretParser(secretrepository string, region string, profile string) string {
+// SecretParser request a secretfile from AWSSSM repository and returns a map[string][string]
+func SecretParser(secretrepository string, region string, profile string) map[string]string {
 
 	secretClient := createsession(region, profile)
 
@@ -29,10 +32,24 @@ func SecretParser(secretrepository string, region string, profile string) string
 		SecretId: aws.String(secretrepository),
 	})
 
+	parseOutput := make(map[string]interface{})
+
 	if err != nil {
 		log.Fatalf("Unable to retrieve secret, information %s", err)
 	}
 
-	return *secretResponse.SecretString
+	err = json.Unmarshal([]byte(*secretResponse.SecretString), &parseOutput)
+
+	if err != nil {
+		log.Fatalf("Unable to unmarshal secret response %s", err)
+	}
+
+	parseResult := make(map[string]string)
+
+	for key, value := range parseOutput {
+		parseResult[key] = fmt.Sprintf("%s", value)
+
+	}
+	return parseResult
 
 }
