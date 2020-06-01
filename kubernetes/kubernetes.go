@@ -1,9 +1,7 @@
 package kubernetes
 
 import (
-	"fmt"
 	"log"
-	"os"
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -12,10 +10,10 @@ import (
 )
 
 // CreateSecret create a secret k8s from a string aws secret
-func CreateSecret(secretdata map[string]string, namespace string, secretrepository string) (*v1.Secret, error) {
+func CreateSecret(secretdata map[string]string, namespace string,
+	secretrepository string, kubeconfig string) (*v1.Secret, error) {
 
-	config, err := clientcmd.BuildConfigFromFlags("",
-		fmt.Sprintf("%s/%s", os.Getenv("HOME"), ".kube/config"))
+	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
 	if err != nil {
 		log.Fatalf("Uanble to generate k8s config %s", config)
 	}

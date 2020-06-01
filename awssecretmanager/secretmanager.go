@@ -32,12 +32,11 @@ func SecretParser(secretrepository string, region string, profile string) map[st
 		SecretId: aws.String(secretrepository),
 	})
 
-	parseOutput := make(map[string]interface{})
-
 	if err != nil {
 		log.Fatalf("Unable to retrieve secret, information %s", err)
 	}
 
+	parseOutput := make(map[string]interface{})
 	err = json.Unmarshal([]byte(*secretResponse.SecretString), &parseOutput)
 
 	if err != nil {
@@ -49,6 +48,11 @@ func SecretParser(secretrepository string, region string, profile string) map[st
 	for key, value := range parseOutput {
 		parseResult[key] = fmt.Sprintf("%s", value)
 
+	}
+
+	if len(parseResult) == 0 {
+		log.Fatal("Secret Repository is empty.",
+			"Secret Repository ougth to contain secret to generate k8s secret")
 	}
 	return parseResult
 
