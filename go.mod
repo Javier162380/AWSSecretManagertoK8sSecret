@@ -9,7 +9,6 @@ require (
 	github.com/google/gofuzz v1.1.0 // indirect
 	github.com/googleapis/gnostic v0.1.0 // indirect
 	github.com/onsi/ginkgo v1.11.0 // indirect
-	github.com/prometheus/common v0.4.0
 	github.com/spf13/cobra v1.0.0
 	golang.org/x/sys v0.0.0-20191022100944-742c48ecaeb7 // indirect
 	k8s.io/api v0.17.0

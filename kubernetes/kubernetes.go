@@ -1,6 +1,7 @@
 package kubernetes
 
 import (
+	"encoding/base64"
 	"log"
 
 	v1 "k8s.io/api/core/v1"
@@ -9,23 +10,39 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-// CreateSecret create a secret k8s from a string aws secret
-func CreateSecret(secretdata map[string]string, namespace string,
-	secretrepository string, kubeconfig string) (*v1.Secret, error) {
-
+func kubernetesauth(kubeconfig string) (*kubernetes.Clientset, error) {
 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
 	if err != nil {
-		log.Fatalf("Uanble to generate k8s config %s", config)
+		return nil, err
 	}
 
 	// creates the clientset
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		log.Fatalf("Unable to authenticate in kubernetes %s", err)
+		return nil, err
+	}
+
+	return clientset, nil
+
+}
+
+// UploadSecret create a secret k8s from a string aws secret
+func UploadSecret(secretdata map[string]string, namespace string,
+	secretrepository string, kubeconfig string) (*v1.Secret, error) {
+
+	// creates the clientset
+	clientset, err := kubernetesauth(kubeconfig)
+
+	if err != nil {
+		return nil, err
 	}
 
 	// get all the secrets in a given namespace
 	secretsMetadata, err := clientset.CoreV1().Secrets(namespace).List(metav1.ListOptions{})
+
+	if err != nil {
+		log.Fatalf("Unable to retrieve secret cluster information %s", err)
+	}
 	secretsList := secretsMetadata.Items
 
 	for _, secret := range secretsList {
@@ -47,4 +64,37 @@ func CreateSecret(secretdata map[string]string, namespace string,
 			Name: secretrepository,
 		},
 	})
+}
+
+// DonwloadSecret download a secret file from k8s secret and return a map
+func DonwloadSecret(namespace string, secretrepository string,
+	kubeconfig string) (map[string]string, error) {
+
+	// creates the clientset
+	clientset, err := kubernetesauth(kubeconfig)
+
+	if err != nil {
+		return nil, err
+	}
+
+	secretResponse, err := clientset.CoreV1().Secrets(namespace).Get(secretrepository, metav1.GetOptions{})
+
+	if err != nil {
+		return nil, err
+	}
+
+	rawsecret := secretResponse.Data
+	processecret := make(map[string]string)
+
+	for key, value := range rawsecret {
+		base64string := base64.StdEncoding.EncodeToString(value)
+		stringdecoded, err := base64.StdEncoding.DecodeString(base64string)
+		if err != nil {
+			return nil, err
+		}
+		processecret[key] = string(stringdecoded)
+
+	}
+	return processecret, nil
+
 }

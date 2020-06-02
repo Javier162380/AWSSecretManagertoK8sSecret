@@ -2,12 +2,12 @@ package secretmanager
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/secretsmanager"
-	"github.com/prometheus/common/log"
 )
 
 func createsession(region string, profile string) *secretsmanager.SecretsManager {
@@ -23,8 +23,8 @@ func createsession(region string, profile string) *secretsmanager.SecretsManager
 
 }
 
-// SecretParser request a secretfile from AWSSSM repository and returns a map[string][string]
-func SecretParser(secretrepository string, region string, profile string) map[string]string {
+// DownloadSecret request a secretfile from AWSSSM repository and returns a map[string][string]
+func DownloadSecret(secretrepository string, region string, profile string) (map[string]string, error) {
 
 	secretClient := createsession(region, profile)
 
@@ -33,14 +33,14 @@ func SecretParser(secretrepository string, region string, profile string) map[st
 	})
 
 	if err != nil {
-		log.Fatalf("Unable to retrieve secret, information %s", err)
+		return nil, err
 	}
 
 	parseOutput := make(map[string]interface{})
 	err = json.Unmarshal([]byte(*secretResponse.SecretString), &parseOutput)
 
 	if err != nil {
-		log.Fatalf("Unable to unmarshal secret response %s", err)
+		return nil, err
 	}
 
 	parseResult := make(map[string]string)
@@ -51,9 +51,11 @@ func SecretParser(secretrepository string, region string, profile string) map[st
 	}
 
 	if len(parseResult) == 0 {
-		log.Fatal("Secret Repository is empty.",
-			"Secret Repository ougth to contain secret to generate k8s secret")
+		return nil, errors.New(`secret repository is empty.
+			secret repository ougth to contain secret to generate k8s secret`)
+
 	}
-	return parseResult
+
+	return parseResult, nil
 
 }
