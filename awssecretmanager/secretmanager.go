@@ -59,3 +59,32 @@ func DownloadSecret(secretrepository string, region string, profile string) (map
 	return parseResult, nil
 
 }
+
+// UploadSecret upload a secret file to AWSSecretManager repository from a map string k8s string.
+func UploadSecret(secretdata map[string]string, secretrepository string, region string, profile string) error {
+
+	if rawdata, err := json.Marshal(&secretdata); err != nil {
+		return err
+	}
+	awssecretdata := aws.String(rawdata)
+	
+	secretClient := createsession(region, profile)
+	secretsResponse, err := secretClient.ListSecrets(&secretsmanager.ListSecretsInput{})
+
+	if err != nil {
+		return err
+
+	}
+
+	secretsList := secretsResponse.SecretList
+
+	for _, secret := range secretsList {
+
+		if secret.Name == aws.String(secretrepository) {
+
+			secretClient.UpdateSecret()
+
+		}
+
+	}
+}
