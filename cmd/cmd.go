@@ -110,6 +110,7 @@ func fromawstok8s(cmd *cobra.Command, args []string) error {
 }
 
 func fromk8stoaws(cmd *cobra.Command, args []string) error {
+
 	rootCommands, err := parserootcmdcommand(cmd)
 
 	if err != nil {
@@ -123,7 +124,13 @@ func fromk8stoaws(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	log.Printf("%s", response)
+	region, profile = rootCommands["region"], rootCommands["profile"]
+
+	errr := secretmanager.UploadSecret(response, secretRepository, region, profile)
+
+	if errr != nil {
+		return errr
+	}
 
 	return nil
 
