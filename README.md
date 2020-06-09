@@ -17,7 +17,7 @@ Available Commands:
 
 Flags:
   -h, --help                      help for secret-moving
-      --kubeconfig string         KubeConfig file path to auth with Kubernetes (default "/Users/javier.llorente/.kube/config")
+      --kubeconfig string         KubeConfig file path to auth with Kubernetes
       --namespace string          kubernetes namespace where the secret is going to be created
       --profile string            AWS Profile for authenticate ssm request (default "default")
       --region string             AWS Region where the secret manager is located
