@@ -97,7 +97,7 @@ func fromawstok8s(cmd *cobra.Command, args []string) error {
 	}
 
 	kubeConfigFile = rootCommands["kubeconfig"]
-	_, errr := kubernetes.UploadSecret(secretdata, namespace, secretRepository, kubeConfigFile)
+	errr := kubernetes.UinsploadSecret(secretdata, namespace, secretRepository, kubeConfigFile)
 
 	if errr != nil {
 		return errr

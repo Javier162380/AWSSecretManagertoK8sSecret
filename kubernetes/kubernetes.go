@@ -26,46 +26,6 @@ func kubernetesauth(kubeconfig string) (*kubernetes.Clientset, error) {
 
 }
 
-// UploadSecret create a secret k8s from a string aws secret
-func UploadSecret(secretdata map[string]string, namespace string,
-	secretrepository string, kubeconfig string) (*v1.Secret, error) {
-
-	// creates the clientset
-	clientset, err := kubernetesauth(kubeconfig)
-
-	if err != nil {
-		return nil, err
-	}
-
-	// get all the secrets in a given namespace
-	secretsMetadata, err := clientset.CoreV1().Secrets(namespace).List(metav1.ListOptions{})
-
-	if err != nil {
-		log.Fatalf("Unable to retrieve secret cluster information %s", err)
-	}
-	secretsList := secretsMetadata.Items
-
-	for _, secret := range secretsList {
-		if secret.ObjectMeta.Name == secretrepository {
-			return clientset.CoreV1().Secrets(namespace).Update(&v1.Secret{
-				StringData: secretdata,
-				ObjectMeta: metav1.ObjectMeta{
-					Name: secretrepository,
-				},
-			})
-
-		}
-
-	}
-
-	return clientset.CoreV1().Secrets(namespace).Create(&v1.Secret{
-		StringData: secretdata,
-		ObjectMeta: metav1.ObjectMeta{
-			Name: secretrepository,
-		},
-	})
-}
-
 // DonwloadSecret download a secret file from k8s secret and return a map
 func DonwloadSecret(namespace string, secretrepository string,
 	kubeconfig string) (map[string]string, error) {
@@ -97,4 +57,56 @@ func DonwloadSecret(namespace string, secretrepository string,
 	}
 	return processecret, nil
 
+}
+
+// UploadSecret create a secret k8s from a string aws secret
+func UploadSecret(secretdata map[string]string, namespace string,
+	secretrepository string, kubeconfig string) error {
+
+	// creates the clientset
+	clientset, err := kubernetesauth(kubeconfig)
+
+	if err != nil {
+		return err
+	}
+
+	// get all the secrets in a given namespace
+	secretsMetadata, err := clientset.CoreV1().Secrets(namespace).List(metav1.ListOptions{})
+
+	if err != nil {
+		log.Fatalf("Unable to retrieve secret cluster information %s", err)
+	}
+	secretsList := secretsMetadata.Items
+
+	for _, secret := range secretsList {
+		if secret.ObjectMeta.Name == secretrepository {
+			_, err := clientset.CoreV1().Secrets(namespace).Update(&v1.Secret{
+				StringData: secretdata,
+				ObjectMeta: metav1.ObjectMeta{
+					Name: secretrepository,
+				},
+			})
+
+			if err != nil {
+				return err
+			}
+
+			return nil
+
+		}
+
+	}
+
+	_, errr := clientset.CoreV1().Secrets(namespace).Create(&v1.Secret{
+		StringData: secretdata,
+		ObjectMeta: metav1.ObjectMeta{
+			Name: secretrepository,
+		},
+	})
+
+	if errr != nil {
+		return errr
+	}
+
+	return nil
 }
