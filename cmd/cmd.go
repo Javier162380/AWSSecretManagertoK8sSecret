@@ -11,23 +11,41 @@ import (
 )
 
 var (
+	// root cmd flags
 	namespace        string
 	secretRepository string
 	region           string
 	profile          string
 	kubeConfigFile   string
-	awstok8s         = &cobra.Command{
+
+	// k8stoenv , awstoenv
+	envpath  string
+	awstok8s = &cobra.Command{
 		Use:   "awstok8s",
 		Short: "Move data from a AWSSecretManager to Kubernetes Secrets",
-		Long:  "Command line application to upload k8s Secrets from an AWSSecretManager",
+		Long:  "Command to upload k8s Secrets from an AWSSecretManager",
 		RunE:  fromawstok8s,
 	}
 	k8stoaws = &cobra.Command{
 		Use:   "k8stoaws",
 		Short: "Move data from a Kubernetes to AWSSecretManager",
-		Long:  "Command line application to upload AWSSecretRepository from k8s secrets",
+		Long:  "Command to upload data to AWSSecretRepository from k8s secrets",
 		RunE:  fromk8stoaws,
 	}
+
+	awstoenv = &cobra.Command{
+		Use:   "awstoenv",
+		Short: "Move secrets data from aws to an envfile",
+		Long:  "Command to download data from an AWSSecretRepository and store it in an envfile",
+		RunE:  fromrepositorytoenv,
+	}
+	k8stoenv = &cobra.Command{
+		Use:   "k8stoenv",
+		Short: "Move secrets data from Kubernetes to an envfile",
+		Long:  "Command to donwload a secret from a K8s cluster and store it in an envfile",
+		RunE:  fromrepositorytoenv,
+	}
+
 	rootCMD = &cobra.Command{
 		Use: "secret-moving",
 	}
@@ -41,6 +59,8 @@ func Execute() error {
 }
 
 func init() {
+
+	// Adding rootCMDs persistent flags
 	rootCMD.PersistentFlags().StringVar(&namespace, "namespace", "",
 		"kubernetes namespace where the secret is going to be created")
 	rootCMD.PersistentFlags().StringVar(&secretRepository, "secretrepository", "",
@@ -52,8 +72,18 @@ func init() {
 	rootCMD.PersistentFlags().StringVar(&kubeConfigFile, "kubeconfig",
 		fmt.Sprintf("%s/%s", os.Getenv("HOME"), ".kube/config"),
 		"KubeConfig file path to auth with Kubernetes")
+
+	// Adding k8stoenv flags.
+	k8stoenv.PersistentFlags().StringVar(&envpath, "envpath", "",
+		"Env variable path where you are going to create your envfile")
+
+	// Adding awstoenv flags.
+	awstoenv.PersistentFlags().StringVar(&envpath, "envpath", "",
+		"Env variable path where you are going to create your envfile")
+
 	rootCMD.AddCommand(awstok8s)
 	rootCMD.AddCommand(k8stoaws)
+	rootCMD.AddCommand(k8stoenv)
 }
 
 func parsestringflag(cmd *cobra.Command, flag string) (string, error) {
@@ -97,7 +127,7 @@ func fromawstok8s(cmd *cobra.Command, args []string) error {
 	}
 
 	kubeConfigFile = rootCommands["kubeconfig"]
-	errr := kubernetes.UinsploadSecret(secretdata, namespace, secretRepository, kubeConfigFile)
+	errr := kubernetes.UploadSecret(secretdata, namespace, secretRepository, kubeConfigFile)
 
 	if errr != nil {
 		return errr
@@ -130,6 +160,35 @@ func fromk8stoaws(cmd *cobra.Command, args []string) error {
 
 	if errr != nil {
 		return errr
+	}
+
+	return nil
+
+}
+
+func fromrepositorytoenv(cmd *cobra.Command, args []string) error {
+	rootCommands, err := parserootcmdcommand(cmd)
+	secretRepository := rootCommands["secretrepository"]
+
+	if err != nil {
+		return err
+	}
+
+	command := cmd.Use
+
+	switch command {
+	case "k8stoenv":
+		namespace, kubeConfigFile = rootCommands["namespace"], rootCommands["kubeconfig"]
+
+		response, err := kubernetes.DonwloadSecret(namespace, secretRepository, kubeConfigFile)
+
+		if err != nil {
+			return err
+		}
+
+	case "awstoenv":
+		fmt.Printf("%s", "Hola")
+
 	}
 
 	return nil

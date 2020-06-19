@@ -8,6 +8,7 @@ require (
 	github.com/gogo/protobuf v1.3.1 // indirect
 	github.com/google/gofuzz v1.1.0 // indirect
 	github.com/googleapis/gnostic v0.1.0 // indirect
+	github.com/joho/godotenv v1.3.0
 	github.com/onsi/ginkgo v1.11.0 // indirect
 	github.com/spf13/cobra v1.0.0
 	golang.org/x/sys v0.0.0-20191022100944-742c48ecaeb7 // indirect

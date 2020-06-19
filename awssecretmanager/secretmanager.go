@@ -75,7 +75,6 @@ func UploadSecret(secretdata map[string]string, secretrepository string, region 
 
 	if err != nil {
 		return err
-
 	}
 
 	secretsList := secretsResponse.SecretList
