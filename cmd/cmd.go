@@ -224,8 +224,9 @@ func fromrepositorytoenv(cmd *cobra.Command, args []string) error {
 
 		return nil
 
-	}
+	default:
+		return nil
 
-	return nil
+	}
 
 }
