@@ -11,3 +11,6 @@
 
 #vscode
 *.vscode
+
+#envfiles
+*.env
