@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 	secretmanager "secret-moving/awssecretmanager"
-	"secret-moving/env"
+	env "secret-moving/envfile"
 	"secret-moving/kubernetes"
 
 	"github.com/spf13/cobra"
@@ -187,7 +187,7 @@ func repositoryEnvWrapper(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	// generic flag
-	secretRepository := rootCommands["secretRepository"]
+	secretRepository := rootCommands["secretrepository"]
 
 	//k8s common flags
 	namespace, kubeConfigFile := rootCommands["namespace"], rootCommands["kubeconfig"]
@@ -211,7 +211,7 @@ func repositoryEnvWrapper(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		errr := helpers.GenerateEnvFile(secretdata, envpath)
+		errr := env.GenerateEnvFile(secretdata, envpath)
 
 		if errr != nil {
 			return errr
