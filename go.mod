@@ -1,4 +1,4 @@
-module AWSSecretManagertoK8sSecret
+module secret-moving
 
 go 1.13
 

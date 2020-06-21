@@ -1,12 +1,12 @@
 package cmd
 
 import (
-	secretmanager "AWSSecretManagertoK8sSecret/awssecretmanager"
-	"AWSSecretManagertoK8sSecret/helpers"
-	"AWSSecretManagertoK8sSecret/kubernetes"
 	"fmt"
 	"log"
 	"os"
+	secretmanager "secret-moving/awssecretmanager"
+	"secret-moving/env"
+	"secret-moving/kubernetes"
 
 	"github.com/spf13/cobra"
 )
@@ -39,13 +39,19 @@ var (
 		Use:   "awstoenv",
 		Short: "Move secrets data from a AWSSecretRepository to an envfile",
 		Long:  "Command to download data from an AWSSecretRepository and store it in an envfile",
-		RunE:  fromrepositorytoenv,
+		RunE:  repositoryEnvWrapper,
 	}
 	k8stoenv = &cobra.Command{
 		Use:   "k8stoenv",
 		Short: "Move secrets data from Kubernetes to an envfile",
 		Long:  "Command to donwload a secret from a K8s cluster and store it in an envfile",
-		RunE:  fromrepositorytoenv,
+		RunE:  repositoryEnvWrapper,
+	}
+	envtok8s = &cobra.Command{
+		Use:   "envtok8s",
+		Short: "Move secrets data from an envfile to K8s secrets",
+		Long:  "Command to generate k8s secrets from envfiles",
+		RunE:  repositoryEnvWrapper,
 	}
 	rootCMD = &cobra.Command{
 		Use: "secret-moving",
@@ -82,11 +88,16 @@ func init() {
 	awstoenv.PersistentFlags().StringVar(&envpath, "envpath", "",
 		"Env variable path where you are going to create your envfile")
 
+	// Adding envtok8s flags.
+	envtok8s.PersistentFlags().StringVar(&envpath, "envpath", "",
+		"Env varialbe path to read from to create the secret")
+
 	// Adding subcommand to root cmd.
 	rootCMD.AddCommand(awstok8s)
 	rootCMD.AddCommand(awstoenv)
 	rootCMD.AddCommand(k8stoaws)
 	rootCMD.AddCommand(k8stoenv)
+	rootCMD.AddCommand(envtok8s)
 }
 
 func parsestringflag(cmd *cobra.Command, flag string) (string, error) {
@@ -169,13 +180,20 @@ func fromk8stoaws(cmd *cobra.Command, args []string) error {
 
 }
 
-func fromrepositorytoenv(cmd *cobra.Command, args []string) error {
+func repositoryEnvWrapper(cmd *cobra.Command, args []string) error {
 	rootCommands, err := parserootcmdcommand(cmd)
 
 	if err != nil {
 		return err
 	}
-	secretRepository := rootCommands["secretrepository"]
+	// generic flag
+	secretRepository := rootCommands["secretRepository"]
+
+	//k8s common flags
+	namespace, kubeConfigFile := rootCommands["namespace"], rootCommands["kubeconfig"]
+
+	//aws common flags
+	region, profile = rootCommands["region"], rootCommands["profile"]
 
 	envpath, err := parsestringflag(cmd, "envpath")
 
@@ -187,7 +205,6 @@ func fromrepositorytoenv(cmd *cobra.Command, args []string) error {
 
 	switch command {
 	case "k8stoenv":
-		namespace, kubeConfigFile = rootCommands["namespace"], rootCommands["kubeconfig"]
 		secretdata, err := kubernetes.DonwloadSecret(namespace, secretRepository, kubeConfigFile)
 
 		if err != nil {
@@ -203,20 +220,28 @@ func fromrepositorytoenv(cmd *cobra.Command, args []string) error {
 		return nil
 
 	case "awstoenv":
-		rootCommands, err := parserootcmdcommand(cmd)
-
-		if err != nil {
-			return err
-		}
-
-		secretRepository, region, profile = rootCommands["secretrepository"], rootCommands["region"], rootCommands["profile"]
 		secretdata, err := secretmanager.DownloadSecret(secretRepository, region, profile)
 
 		if err != nil {
 			return err
 		}
 
-		errr := helpers.GenerateEnvFile(secretdata, envpath)
+		errr := env.GenerateEnvFile(secretdata, envpath)
+
+		if errr != nil {
+			return errr
+		}
+
+		return nil
+
+	case "envtok8s":
+		secretdata, err := env.LoadEnvFile(envpath)
+
+		if err != nil {
+			return err
+		}
+
+		errr := kubernetes.UploadSecret(secretdata, namespace, secretRepository, kubeConfigFile)
 
 		if errr != nil {
 			return errr

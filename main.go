@@ -1,8 +1,8 @@
 package main
 
 import (
-	"AWSSecretManagertoK8sSecret/cmd"
 	"log"
+	"secret-moving/cmd"
 )
 
 func main() {
