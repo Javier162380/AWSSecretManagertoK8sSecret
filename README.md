@@ -1,5 +1,5 @@
-# AWSSecretManagertoK8sSecret
-Simple tool to move secrets from AWSSecretManager to K8sSecrets
+# secret-moving
+Simple tool to move secrets between AWSSecretManager, K8sSecrets and .env files
 
 # Usage.
 ``` bash
